@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Crèche Mobile Friendly</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+body{font-family:Arial,sans-serif;margin:0;padding:0;background:#f0f4f8;}
+header{background:#1976d2;color:white;text-align:center;padding:12px 0;font-size:18px;position:sticky;top:0;z-index:10;}
+button{padding:8px 14px;border:none;border-radius:6px;background:#1976d2;color:white;cursor:pointer;margin:4px;font-size:15px;}
+button:hover{background:#0d47a1;}
+input,select{padding:8px;margin:4px;border-radius:6px;border:1px solid #1976d2;font-size:15px;width:95%;}
+#container{display:flex;flex-direction:row;min-height:80vh;}
+#sidebar{width:60px;background:#2196f3;padding:10px;transition:width 0.3s;overflow:hidden;}
+#sidebar.expanded{width:220px;}
+#sidebar h3{cursor:pointer;color:white;padding:8px;margin:5px 0;font-size:16px;display:flex;align-items:center;}
+#sidebar h3 i{margin-right:8px;}
+#sidebar div.content{display:none;padding:6px;margin-bottom:10px;background:#bbdefb;border-radius:6px;font-size:14px;}
+#main{flex:1;padding:10px;}
+table{border-collapse:collapse;width:100%;margin-top:5px;font-size:14px;}
+th,td{border:1px solid #1976d2;padding:6px;text-align:center;}
+th{background:#1976d2;color:white;}
+td{border-radius:4px;}
+#backBtn{background:#d32f2f;}
+#backBtn:hover{background:#b71c1c;}
+#fullScreenView{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(240,244,248,0.95);z-index:1000;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:20px 0;}
+#fullScreenContentWrapper{max-width:95%;width:100%;background:white;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.2);padding:20px;overflow-x:auto;text-align:center;}
+#fullScreenContentWrapper table{width:100%;border-collapse:collapse;font-size:14px;}
+#fullScreenContentWrapper th,#fullScreenContentWrapper td{border:1px solid #1976d2;padding:8px;text-align:center;}
+#fullScreenContentWrapper th{background:#1976d2;color:white;}
+@keyframes blink {0%{opacity:1;}50%{opacity:0.3;}100%{opacity:1;}}
+.blinkingMessage{background:#ffeb3b;color:red;font-weight:bold;padding:10px;border-radius:6px;animation:blink 1s infinite;margin-bottom:8px;}
+</style>
+</head>
+<body>
+<header>
+<h1>Gestion Crèche Mobile</h1>
+<button id="backBtn" onclick="goHome()" style="display:none"><i class="fas fa-arrow-left"></i> Retour</button>
+</header>
+
+<div id="loginPage">
+<h2>Connexion</h2>
+<select id="roleSelect" onchange="changeRoleLogin()">
+<option value="admin">Directeur</option>
+<option value="parent">Parent</option>
+</select><br><br>
+
+<div id="adminLogin">
+<input type="password" id="adminPinInput" placeholder="Code secret du Directeur"><br>
+</div>
+
+<div id="parentLogin" style="display:none">
+<input type="text" id="parentNameInput" placeholder="Nom du parent"><br>
+<input type="password" id="parentPinInput" placeholder="Code secret"><br>
+</div>
+
+<button onclick="login()"><i class="fas fa-sign-in-alt"></i> Connexion</button>
+</div>
+
+<div id="adminPanel" style="display:none">
+<div id="container">
+<div id="sidebar">
+<h3 onclick="toggleSidebar()"><i class="fas fa-bars"></i> Menu</h3>
+<h3 onclick="toggleMenu('addParent')"><i class="fas fa-user-plus"></i> Ajouter Parents</h3>
+<div id="addParent" class="content">
+<input id="newParentName" placeholder="Nom"><br>
+<input id="newParentPhone" placeholder="Téléphone"><br>
+<input id="newParentEmail" placeholder="Email"><br>
+<input id="newParentPin" placeholder="Code secret"><br>
+<button onclick="addParent()"><i class="fas fa-plus"></i> Ajouter</button>
+</div>
+
+<h3 onclick="toggleMenu('addChild')"><i class="fas fa-child"></i> Enregistrer Enfants</h3>
+<div id="addChild" class="content">
+<select id="parentSelect"><option value="">Choisir Parent</option></select><br>
+<input id="childName" placeholder="Nom de l'enfant"><br>
+<input id="childAge" placeholder="Âge"><br>
+<select id="childClass">
+<option value="">Classe</option><option>Petit</option><option>Moyen</option><option>Grand</option>
+</select><br>
+<select id="childAttendance">
+<option value="">Présent / Absent Aujourd'hui</option><option>Présent</option><option>Absent</option>
+</select><br>
+<button onclick="addChild()"><i class="fas fa-plus"></i> Enregistrer</button><br><br>
+</div>
+
+<h3 onclick="showTodayTableFullScreen()"><i class="fas fa-calendar-check"></i> Présence Aujourd'hui</h3>
+<h3 onclick="showPaymentTableFullScreen()"><i class="fas fa-money-bill"></i> Paiements</h3>
+<h3 onclick="showParentFullScreen()"><i class="fas fa-users"></i> Liste des parents</h3>
+</div>
+<div id="main"></div>
+</div>
+</div>
+
+<div id="parentPanel" style="display:none">
+<div id="container">
+<div id="sidebar">
+<div id="alwaysMessage" class="blinkingMessage" style="text-align:center;"></div>
+<h3 onclick="showParentChildFullScreen()"><i class="fas fa-child"></i> État de l'enfant Aujourd'hui</h3>
+<h3 onclick="showParentUnpaidFullScreen()"><i class="fas fa-money-bill-wave"></i> Mois non payés</h3>
+</div>
+<div id="main"></div>
+</div>
+</div>
+
+<div id="fullScreenView">
+<div id="fullScreenContentWrapper">
+<button onclick="hideFullScreen()" style="background:#d32f2f;color:white;padding:6px 12px;border:none;border-radius:6px;margin-bottom:10px;"><i class="fas fa-arrow-left"></i> Retour</button>
+<div id="fullScreenContent"></div>
+</div>
+</div>
+
+<script>
+// Données locales
+let adminPin="2580";
+let parents=JSON.parse(localStorage.getItem("parents"))||[];
+let children=JSON.parse(localStorage.getItem("children"))||[];
+let currentParent=null;
+
+function hashCode(str){let hash=0;for(let i=0;i<str.length;i++){hash=((hash<<5)-hash)+str.charCodeAt(i);hash|=0;}return hash;}
+function changeRoleLogin(){let role=document.getElementById("roleSelect").value;document.getElementById("adminLogin").style.display=role=="admin"?"block":"none";document.getElementById("parentLogin").style.display=role=="parent"?"block":"none";}
+function goHome(){document.getElementById("adminPanel").style.display="none";document.getElementById("parentPanel").style.display="none";document.getElementById("loginPage").style.display="block";document.getElementById("backBtn").style.display="none";}
+function toggleMenu(id){let div=document.getElementById(id);div.style.display=div.style.display==="block"?"none":"block";}
+function saveAll(){localStorage.setItem("parents",JSON.stringify(parents));localStorage.setItem("children",JSON.stringify(children));}
+function loadParentSelect(){let sel=document.getElementById("parentSelect");sel.innerHTML=`<option value="">Choisir Parent</option>`;parents.forEach(p=>{sel.innerHTML+=`<option value="${p.name}">${p.name}</option>`;});}
+
+// Toggle sidebar
+function toggleSidebar(){document.getElementById("sidebar").classList.toggle("expanded");}
+
+// Connexion
+function login(){
+  let role=document.getElementById("roleSelect").value;
+  if(role=="admin"){
+      if(hashCode(document.getElementById("adminPinInput").value)==hashCode(adminPin)){
+          document.getElementById("adminPanel").style.display="block";
+          document.getElementById("loginPage").style.display="none";
+          document.getElementById("backBtn").style.display="inline-block";
+          loadParentSelect();
+      }else alert("Code secret incorrect");
+  }else{
+      let name=document.getElementById("parentNameInput").value;
+      let pin=document.getElementById("parentPinInput").value;
+      let parent=parents.find(p=>p.name===name && p.pin===pin);
+      if(parent){currentParent=parent;document.getElementById("parentPanel").style.display="block";document.getElementById("loginPage").style.display="none";document.getElementById("backBtn").style.display="inline-block";updateParentMessages();}
+      else alert("Nom ou code incorrect");
+  }
+}
+
+// Ajouter Parent
+function addParent(){
+  let name=document.getElementById("newParentName").value.trim();
+  let phone=document.getElementById("newParentPhone").value.trim();
+  let email=document.getElementById("newParentEmail").value.trim();
+  let pin=document.getElementById("newParentPin").value.trim();
+  if(!name||!phone||!email||!pin){alert("Remplir tous les champs");return;}
+  parents.push({name,phone,email,pin});
+  saveAll();
+  loadParentSelect();
+  document.getElementById("newParentName").value="";
+  document.getElementById("newParentPhone").value="";
+  document.getElementById("newParentEmail").value="";
+  document.getElementById("newParentPin").value="";
+}
+
+// Ajouter Enfant
+function addChild(){
+  let parentName=document.getElementById("parentSelect").value;
+  let name=document.getElementById("childName").value.trim();
+  let age=document.getElementById("childAge").value.trim();
+  let cls=document.getElementById("childClass").value;
+  let att=document.getElementById("childAttendance").value;
+  if(!parentName||!name||!age||!cls||!att){alert("Remplir tous les champs");return;}
+  let today=new Date().toLocaleDateString();
+  children.push({parent:parentName,child:name,age,cls,attendance:{[today]:att},payments:{}});
+  saveAll();
+  document.getElementById("childName").value="";
+  document.getElementById("childAge").value="";
+  document.getElementById("childClass").value="";
+  document.getElementById("childAttendance").value="";
+}
+
+// Messages lumineux
+function updateParentMessages(){
+  let today=new Date();
+  const months=[today.toLocaleString('fr-FR',{month:'long'}),new Date(today.getFullYear(),today.getMonth()-1,1).toLocaleString('fr-FR',{month:'long'})];
+  let msgs=[];
+  children.filter(c=>c.parent===currentParent.name).forEach(c=>{
+    months.forEach(m=>{
+      if(!c.payments[m]) msgs.push(`⚠️ L'enfant ${c.child} n'a pas payé le mois de ${m}.`);
+    });
+  });
+
+  let msgDiv=document.getElementById("alwaysMessage");
+  if(msgs.length===0){msgDiv.textContent="Pas de nouveaux messages"; msgDiv.className="";}
+  else{msgDiv.innerHTML=msgs.join("<br>"); msgDiv.className="blinkingMessage";}
+}
+
+// Affichage page complète
+function showFullScreen(htmlContent){document.getElementById("fullScreenContent").innerHTML=htmlContent;document.getElementById("fullScreenView").style.display="flex";}
+function hideFullScreen(){document.getElementById("fullScreenView").style.display="none";}
+
+// Table présence aujourd'hui
+function showTodayTableFullScreen(){
+  let today=new Date().toLocaleDateString();
+  let rows=children.map(c=>`<tr><td>${c.child}</td><td>${c.parent}</td><td>${c.attendance[today]||"N/A"}</td></tr>`).join("");
+  let html=`<table><tr><th>Enfant</th><th>Parent</th><th>Présence Aujourd'hui</th></tr>${rows}</table>`;
+  showFullScreen(html);
+}
+
+// Table paiements avec modification
+function showPaymentTableFullScreen(){
+  let today=new Date();
+  const months=[today.toLocaleString('fr-FR',{month:'long'}), new Date(today.getFullYear(),today.getMonth()-1,1).toLocaleString('fr-FR',{month:'long'})];
+  
+  let rows=children.map(c=>{
+    let pays=months.map(m=>{
+      let status=c.payments[m]?"Payé":"Non payé";
+      let color=c.payments[m]?"green":"red";
+      return `<td style="color:${color}; cursor:pointer;" onclick="togglePayment('${c.child}','${c.parent}','${m}')">${status}</td>`;
+    }).join("");
+    return `<tr><td>${c.child}</td><td>${c.parent}</td>${pays}</tr>`;
+  }).join("");
+
+  let html=`<table>
+    <tr><th>Enfant</th><th>Parent</th><th>${months[0]}</th><th>${months[1]}</th></tr>
+    ${rows}
+  </table>`;
+  showFullScreen(html);
+}
+
+// Modifier paiement
+function togglePayment(childName,parentName,month){
+  let child=children.find(c=>c.child===childName && c.parent===parentName);
+  if(child){
+    child.payments[month]=!child.payments[month];
+    saveAll();
+    showPaymentTableFullScreen();
+    updateParentMessages();
+  }
+}
+
+// Liste parents et suppression
+function showParentFullScreen(){
+  let rows=parents.map(p=>`<tr><td>${p.name}</td><td>${p.phone}</td><td>${p.email}</td><td><button onclick="deleteParent('${p.name}')"><i class="fas fa-trash"></i></button></td></tr>`).join("");
+  let html=`<table><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Action</th></tr>${rows}</table>`;
+  showFullScreen(html);
+}
+function deleteParent(name){
+  if(confirm("Voulez-vous supprimer ce parent et ses enfants ?")){
+    parents=parents.filter(p=>p.name!==name);
+    children=children.filter(c=>c.parent!==name);
+    saveAll();
+    showParentFullScreen();
+  }
+}
+
+// Parent: état enfant
+function showParentChildFullScreen(){
+  let today=new Date().toLocaleDateString();
+  let rows=children.filter(c=>c.parent===currentParent.name).map(c=>`<tr><td>${c.child}</td><td>${c.attendance[today]||"N/A"}</td></tr>`).join("");
+  let html=`<table><tr><th>Enfant</th><th>Présence Aujourd'hui</th></tr>${rows}</table>`;
+  showFullScreen(html);
+}
+
+// Parent: mois non payés
+function showParentUnpaidFullScreen(){
+  let today=new Date();
+  const months=[today.toLocaleString('fr-FR',{month:'long'}), new Date(today.getFullYear(),today.getMonth()-1,1).toLocaleString('fr-FR',{month:'long'})];
+  let rows=children.filter(c=>c.parent===currentParent.name).map(c=>{
+    let unpaid=months.filter(m=>!c.payments[m]).join(" / ")||"Tout payé";
+    return `<tr><td>${c.child}</td><td>${unpaid}</td></tr>`;
+  }).join("");
+  let html=`<table><tr><th>Enfant</th><th>Mois non payés</th></tr>${rows}</table>`;
+  showFullScreen(html);
+}
+</script>
+</body>
+</html>
